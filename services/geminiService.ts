@@ -1,15 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GentleMessage, MessageType } from "../types";
 
-// Safety wrapper for process access
-const getApiKey = () => {
-  try {
-    return (typeof process !== 'undefined' && process.env) ? process.env.API_KEY : undefined;
-  } catch {
-    return undefined;
-  }
-};
-
 export const fetchGentleMessage = async (type: MessageType, goalContext?: string): Promise<GentleMessage> => {
   const fallback: GentleMessage = {
     text: "The stars are quiet today, but they are still there. Take a gentle breath.",
@@ -17,7 +8,7 @@ export const fetchGentleMessage = async (type: MessageType, goalContext?: string
     author: 'Ember'
   };
 
-  const apiKey = getApiKey();
+  const apiKey = process.env.API_KEY;
   
   if (!apiKey) {
     console.warn("API Key is missing. Using local fallback.");
@@ -54,9 +45,7 @@ export const fetchGentleMessage = async (type: MessageType, goalContext?: string
       }
     });
 
-    const rawText = response.text || "{}";
-    const cleanJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-    const result = JSON.parse(cleanJson);
+    const result = JSON.parse(response.text || "{}");
     
     return {
       text: result.text || fallback.text,
