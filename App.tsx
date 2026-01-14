@@ -7,11 +7,8 @@ import DailyGoalSection from './components/DailyGoalSection';
 import AmbientSoundControl, { AmbientType } from './components/AmbientSoundControl';
 
 const App: React.FC = () => {
-  const [message, setMessage] = useState<GentleMessage>({
-    text: "Welcome to your quiet corner. Take a breath and let the world drift away for a moment.",
-    type: 'quote',
-    author: 'Ember'
-  });
+  // Use null as initial state to ensure we always fetch a fresh one on mount
+  const [message, setMessage] = useState<GentleMessage | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [bgIndex, setBgIndex] = useState(0);
@@ -43,8 +40,8 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      // Occasional compliments: 20% chance
-      const type: MessageType = forcedType || (Math.random() < 0.2 ? 'compliment' : 'quote');
+      // 30% chance of a compliment, 70% chance of a quote
+      const type: MessageType = forcedType || (Math.random() < 0.3 ? 'compliment' : 'quote');
       const newMessage = await fetchGentleMessage(type, context);
       setMessage(newMessage);
       setBgIndex((prev) => (prev + 1) % backgrounds.length);
@@ -64,7 +61,7 @@ const App: React.FC = () => {
     }
   }, [backgrounds.length]);
 
-  // Ensure a new quote on every refresh
+  // Ensure a new message on every refresh
   useEffect(() => {
     getNewMessage();
   }, [getNewMessage]);
@@ -202,7 +199,7 @@ const App: React.FC = () => {
             <MessageCard 
               message={message} 
               isLoading={isLoading} 
-              isSaved={savedMessages.some(m => m.text === message.text)} 
+              isSaved={savedMessages.some(m => m.text === (message?.text || ""))} 
               onSave={toggleSaveMessage} 
               onRefresh={() => getNewMessage()}
             />
