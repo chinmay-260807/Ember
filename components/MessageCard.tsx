@@ -1,0 +1,151 @@
+
+import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { GentleMessage } from '../types';
+
+interface MessageCardProps {
+  message: GentleMessage | null;
+  isLoading: boolean;
+  isSaved: boolean;
+  onSave: (message: GentleMessage) => void;
+  onRefresh: () => void;
+}
+
+const MessageCard: React.FC<MessageCardProps> = ({ message, isLoading, isSaved, onSave, onRefresh }) => {
+  const [copied, setCopied] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center space-y-4 animate-pulse h-64 md:h-80 w-full max-w-lg">
+        <div className="h-6 w-48 bg-[#4a4e69]/5 rounded-full mb-4"></div>
+        <div className="h-4 w-64 bg-[#4a4e69]/5 rounded-full"></div>
+        <div className="h-4 w-40 bg-[#4a4e69]/5 rounded-full"></div>
+      </div>
+    );
+  }
+
+  if (!message) return null;
+
+  const getFullText = () => `"${message.text}"${message.author ? ` — ${message.author}` : ''}`;
+
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const fullText = getFullText();
+    try {
+      await navigator.clipboard.writeText(fullText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const shareText = getFullText();
+    const shareUrl = window.location.origin + window.location.pathname;
+    const shareData = {
+      title: 'A Moment from Ember',
+      text: shareText,
+      url: shareUrl,
+    };
+
+    if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Error sharing:', err);
+        }
+      }
+    } else {
+      // Fallback to copy if sharing is not supported
+      handleCopy(e);
+    }
+  };
+
+  const handleSaveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSave(message);
+  };
+
+  return (
+    <div 
+      key={message.text}
+      onClick={onRefresh}
+      className="w-full max-w-2xl px-8 py-12 md:py-20 text-center animate-fade-in flex flex-col items-center relative cursor-pointer group select-none rounded-[3rem] transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-[1.03] hover:bg-white/20 hover:shadow-[0_40px_80px_-20px_rgba(74,78,105,0.08)] active:scale-[0.98]"
+    >
+      {/* Action Buttons Layer */}
+      <div className="absolute right-4 top-4 md:right-8 md:top-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col space-y-3 z-10">
+        <button 
+          onClick={handleSaveClick}
+          className={`p-3 rounded-full transition-all duration-300 bg-white/40 backdrop-blur-sm border border-[#f2e9e4] shadow-sm ${isSaved ? 'text-[#e5989b]' : 'text-[#9a8c98] hover:text-[#e5989b]'}`}
+          title={isSaved ? "Remove" : "Save"}
+        >
+          <svg 
+            className={isSaved ? 'animate-heart-pop' : ''}
+            xmlns="http://www.w3.org/2000/svg" 
+            width="18" 
+            height="18" 
+            fill={isSaved ? "currentColor" : "none"} 
+            stroke="currentColor" 
+            strokeWidth="1.5" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
+          </svg>
+        </button>
+
+        <button 
+          onClick={handleCopy}
+          className="p-3 rounded-full text-[#9a8c98] hover:text-[#4a4e69] transition-all duration-300 bg-white/40 backdrop-blur-sm border border-[#f2e9e4] shadow-sm relative"
+          title="Copy to Clipboard"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5-1.5H13.5a9.06 9.06 0 0 1 1.5 1.5h1.125c.621 0 1.125.504 1.125 1.125V11.25M7.5 10.5h6.375m-6.375 3h6.375m-6.375 3h7.5" />
+          </svg>
+          {copied && (
+            <span className="absolute right-full mr-4 top-1/2 -translate-y-1/2 whitespace-nowrap bg-[#4a4e69] text-white text-[10px] px-3 py-1.5 rounded-lg shadow-xl uppercase tracking-widest font-medium animate-fade-in-up">
+              Copied!
+            </span>
+          )}
+        </button>
+
+        <button 
+          onClick={handleShare}
+          className="p-3 rounded-full text-[#9a8c98] hover:text-[#4a4e69] transition-all duration-300 bg-white/40 backdrop-blur-sm border border-[#f2e9e4] shadow-sm"
+          title="Share"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Zm3.933 12.814a2.25 2.25 0 1 0-3.933-2.185 2.25 2.25 0 0 0 3.933 2.185Z" />
+          </svg>
+        </button>
+      </div>
+
+      <div className={`text-2xl md:text-4xl lg:text-5xl leading-[1.6] md:leading-[1.4] serif italic mb-8 md:mb-12 transition-colors duration-1000 ${message.type === 'goal_completion' ? 'text-[#4a4e69]' : 'text-[#22223b]'}`}>
+        <ReactMarkdown components={{ p: React.Fragment }}>
+          {`"${message.text}"`}
+        </ReactMarkdown>
+      </div>
+      
+      {message.author && (
+        <p className="text-xs md:text-sm uppercase tracking-[0.4em] text-[#9a8c98] font-light opacity-60">
+          — {message.author}
+        </p>
+      )}
+
+      {/* Interaction Hint */}
+      <div className="mt-12 md:mt-16 opacity-0 group-hover:opacity-40 transition-all duration-1000 text-[10px] uppercase tracking-[0.3em] text-[#4a4e69]">
+        Tap to kindle another
+      </div>
+
+      {message.type === 'compliment' && (
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-2 shimmer-bg text-[#4a4e69] text-[10px] font-medium rounded-full uppercase tracking-[0.3em] shadow-sm border border-[#f2e9e4]">
+          Warmth
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MessageCard;
