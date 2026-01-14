@@ -5,21 +5,11 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   define: {
-    // Vite handles replacing process.env during build
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY || '')
   },
   build: {
     target: 'esnext',
     outDir: 'dist',
-    minify: 'esbuild',
-    rollupOptions: {
-      output: {
-        manualChunks: undefined
-      }
-    }
-  },
-  server: {
-    port: 3000,
-    host: true
+    minify: 'esbuild'
   }
 });
