@@ -57,7 +57,8 @@ export const fetchGentleMessage = async (type: MessageType, goalContext?: string
       }
     });
 
-    const result = JSON.parse(response.text || "{}");
+    const text = response.text;
+    const result = JSON.parse(text || "{}");
     
     return {
       text: result.text || getFallback().text,
