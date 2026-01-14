@@ -1,23 +1,30 @@
+
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 
-function start() {
+const mount = () => {
   const container = document.getElementById('root');
-  if (container) {
+  if (!container) {
+    console.error('Fatal: #root element not found in DOM.');
+    return;
+  }
+  
+  try {
     const root = createRoot(container);
     root.render(
       <React.StrictMode>
         <App />
       </React.StrictMode>
     );
-  } else {
-    console.error('Failed to find the root element');
+  } catch (err) {
+    console.error('Fatal: Error during React root creation:', err);
   }
-}
+};
 
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  start();
+// Mount immediately if DOM is ready, otherwise wait for DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mount);
 } else {
-  document.addEventListener('DOMContentLoaded', start);
+  mount();
 }

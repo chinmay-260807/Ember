@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GentleMessage, MessageType, DailyGoal, DailyQuote } from './types';
 import { fetchGentleMessage } from './services/geminiService';
@@ -7,8 +8,9 @@ import DailyGoalSection from './components/DailyGoalSection';
 import AmbientSoundControl, { AmbientType } from './components/AmbientSoundControl';
 
 const App: React.FC = () => {
+  // Use a sensible default message to guarantee content on first paint
   const [message, setMessage] = useState<GentleMessage>({
-    text: "Welcome to your quiet corner. Take a moment to just be.",
+    text: "Welcome to your quiet corner. Take a breath and let the world drift away for a moment.",
     type: 'quote',
     author: 'Ember'
   });
@@ -57,12 +59,17 @@ const App: React.FC = () => {
       setMessage(newMessage);
       setBgIndex((prev) => (prev + 1) % backgrounds.length);
       
-      if (newMessage.type === 'compliment') audioService.playCompliment();
-      else if (newMessage.type === 'goal_completion') audioService.playCompletion();
-      else audioService.playQuote();
+      // Attempt to play audio, but catch errors to prevent app crash if AudioContext fails
+      try {
+        if (newMessage.type === 'compliment') audioService.playCompliment();
+        else if (newMessage.type === 'goal_completion') audioService.playCompletion();
+        else audioService.playQuote();
+      } catch (e) {
+        console.warn('Audio playback failed', e);
+      }
     } catch (err) {
       console.error("App: Fetch error", err);
-      setError("The connection to the stars was interrupted.");
+      setError("The connection to the stars was interrupted. Showing local light.");
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +82,7 @@ const App: React.FC = () => {
     } else {
       getNewMessage('daily');
     }
-  }, [dailyQuote, getNewMessage]);
+  }, [getNewMessage]); // Reduced dependencies to prevent infinite loops
 
   const handleSetGoal = (text: string, totalSteps: number) => {
     const newGoal: DailyGoal = { 
@@ -87,7 +94,9 @@ const App: React.FC = () => {
     };
     const updatedGoals = [...dailyGoals, newGoal];
     setDailyGoals(updatedGoals);
-    localStorage.setItem('gentle_daily_goals', JSON.stringify(updatedGoals));
+    try {
+      localStorage.setItem('gentle_daily_goals', JSON.stringify(updatedGoals));
+    } catch (e) { console.warn('LocalStorage failed', e); }
     audioService.playProgress();
   };
 
@@ -104,13 +113,17 @@ const App: React.FC = () => {
       return goal;
     });
     setDailyGoals(updatedGoals);
-    localStorage.setItem('gentle_daily_goals', JSON.stringify(updatedGoals));
+    try {
+      localStorage.setItem('gentle_daily_goals', JSON.stringify(updatedGoals));
+    } catch (e) { console.warn('LocalStorage failed', e); }
   };
 
   const handleClearGoal = (goalId: string) => {
     const updatedGoals = dailyGoals.filter(goal => goal.id !== goalId);
     setDailyGoals(updatedGoals);
-    localStorage.setItem('gentle_daily_goals', JSON.stringify(updatedGoals));
+    try {
+      localStorage.setItem('gentle_daily_goals', JSON.stringify(updatedGoals));
+    } catch (e) { console.warn('LocalStorage failed', e); }
     audioService.playUndo();
   };
 
@@ -125,13 +138,17 @@ const App: React.FC = () => {
       audioService.playProgress();
     }
     setSavedMessages(newSaved);
-    localStorage.setItem('gentle_saved_messages', JSON.stringify(newSaved));
+    try {
+      localStorage.setItem('gentle_saved_messages', JSON.stringify(newSaved));
+    } catch (e) { console.warn('LocalStorage failed', e); }
   };
 
   const handleAmbientChange = (type: AmbientType) => {
     setAmbientType(type);
-    if (type === 'none') audioService.stopAmbient();
-    else audioService.startAmbient(type as any);
+    try {
+      if (type === 'none') audioService.stopAmbient();
+      else audioService.startAmbient(type as any);
+    } catch (e) { console.warn('Ambient audio failed', e); }
   };
 
   const filteredMessages = useMemo(() => {
@@ -164,10 +181,14 @@ const App: React.FC = () => {
       </nav>
 
       <main className="flex-1 w-full max-w-5xl flex flex-col items-center">
-        {error && !showFavorites && <div className="bg-red-50 text-red-800 text-[10px] uppercase tracking-widest px-4 py-2 rounded-full mb-8">{error}</div>}
+        {error && !showFavorites && (
+          <div className="bg-red-50 text-red-800 text-[10px] uppercase tracking-widest px-4 py-2 rounded-full mb-8 animate-fade-in">
+            {error}
+          </div>
+        )}
 
         {showFavorites ? (
-          <div className="w-full max-w-2xl flex flex-col items-center">
+          <div className="w-full max-w-2xl flex flex-col items-center animate-fade-in">
             <h2 className="text-xs uppercase tracking-[0.3em] text-[#9a8c98] mb-8">Your Collection</h2>
             <input
               type="text"
@@ -181,7 +202,7 @@ const App: React.FC = () => {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
                 {filteredMessages.map((msg, idx) => (
-                  <div key={idx} className="bg-white/40 p-6 rounded-3xl border border-[#f2e9e4] relative group">
+                  <div key={idx} className="bg-white/40 p-6 rounded-3xl border border-[#f2e9e4] relative group animate-fade-in-up" style={{animationDelay: `${idx*0.05}s`}}>
                     <button onClick={() => toggleSaveMessage(msg)} className="absolute top-4 right-4 text-[#e5989b] opacity-40 hover:opacity-100">×</button>
                     <p className="serif italic text-[#4a4e69] mb-2">"{msg.text}"</p>
                     {msg.author && <p className="text-[10px] uppercase tracking-widest text-[#9a8c98]">— {msg.author}</p>}
@@ -189,7 +210,7 @@ const App: React.FC = () => {
                 ))}
               </div>
             )}
-            <button onClick={() => setShowFavorites(false)} className="mt-12 text-[10px] uppercase tracking-[0.2em] text-[#9a8c98]">Back</button>
+            <button onClick={() => setShowFavorites(false)} className="mt-12 text-[10px] uppercase tracking-[0.2em] text-[#9a8c98]">Back to light</button>
           </div>
         ) : (
           <div className="w-full flex flex-col items-center space-y-24">
