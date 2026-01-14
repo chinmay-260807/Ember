@@ -5,8 +5,7 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   define: {
-    // Ensure process.env.API_KEY is available during the build
-    'process.env': JSON.stringify(process.env || {})
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY || '')
   },
   build: {
     target: 'esnext',
