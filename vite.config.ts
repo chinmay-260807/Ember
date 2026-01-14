@@ -4,14 +4,24 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // Ensures assets are loaded correctly regardless of deployment subpath
+  base: './',
   define: {
-    // Provide a fallback for process.env to prevent ReferenceErrors in the browser
     'process.env': JSON.stringify(process.env || { API_KEY: '' })
   },
   build: {
     target: 'esnext',
     outDir: 'dist',
+    rollupOptions: {
+      // These modules are provided by the browser via the importmap in index.html
+      external: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        '@google/genai',
+        'react-markdown'
+      ],
+    },
     sourcemap: false,
     minify: 'esbuild',
   },
