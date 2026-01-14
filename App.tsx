@@ -7,7 +7,6 @@ import DailyGoalSection from './components/DailyGoalSection';
 import AmbientSoundControl, { AmbientType } from './components/AmbientSoundControl';
 
 const App: React.FC = () => {
-  // Use null as initial state to ensure we always fetch a fresh one on mount
   const [message, setMessage] = useState<GentleMessage | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,10 +38,18 @@ const App: React.FC = () => {
   const getNewMessage = useCallback(async (forcedType?: MessageType, context?: string) => {
     setIsLoading(true);
     setError(null);
+    
+    // Runtime entropy selection
+    const themes = [
+      "soft morning light", "the first snowfall", "a quiet library", 
+      "warm amber embers", "starlit horizons", "gentle ocean mist",
+      "mountain silence", "garden blooms", "golden hour"
+    ];
+    const randomTheme = themes[Math.floor(Math.random() * themes.length)];
+
     try {
-      // 30% chance of a compliment, 70% chance of a quote
       const type: MessageType = forcedType || (Math.random() < 0.3 ? 'compliment' : 'quote');
-      const newMessage = await fetchGentleMessage(type, context);
+      const newMessage = await fetchGentleMessage(type, context, randomTheme);
       setMessage(newMessage);
       setBgIndex((prev) => (prev + 1) % backgrounds.length);
       
@@ -61,7 +68,7 @@ const App: React.FC = () => {
     }
   }, [backgrounds.length]);
 
-  // Ensure a new message on every refresh
+  // UseEffect triggers runtime randomness on every mount (refresh)
   useEffect(() => {
     getNewMessage();
   }, [getNewMessage]);
