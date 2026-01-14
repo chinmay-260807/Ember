@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { GentleMessage, MessageType } from "../types";
 
@@ -40,7 +41,11 @@ export const fetchGentleMessage = async (type: MessageType, goalContext?: string
     });
 
     // Extract text directly from the response object's .text property.
-    const result = JSON.parse(response.text || '{}');
+    const rawText = response.text || "{}";
+    // Robustly handle if the model wraps JSON in markdown blocks
+    const cleanJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+    const result = JSON.parse(cleanJson);
+    
     return {
       text: result.text || "A beautiful step forward.",
       type: type,
@@ -49,7 +54,7 @@ export const fetchGentleMessage = async (type: MessageType, goalContext?: string
   } catch (error) {
     console.error("Error fetching message:", error);
     return {
-      text: "Take a deep breath. You're doing just fine.",
+      text: "The stars are quiet today, but they are still there. Take a gentle breath.",
       type: 'quote',
       author: 'Ember'
     };
