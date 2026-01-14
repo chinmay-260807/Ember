@@ -23,7 +23,6 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, isLoading, isSaved, 
     );
   }
 
-  // Ensure we never return null to prevent blank pages
   const displayMessage = message || {
     text: "Kindling a thought for you...",
     type: 'quote',
@@ -75,10 +74,9 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, isLoading, isSaved, 
   return (
     <div 
       key={displayMessage.text}
-      onClick={onRefresh}
-      className="w-full max-w-2xl px-8 py-12 md:py-20 text-center animate-fade-in flex flex-col items-center relative cursor-pointer group select-none rounded-[3rem] transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-[1.03] hover:bg-white/20 hover:shadow-[0_40px_80px_-20px_rgba(74,78,105,0.08)] active:scale-[0.98]"
+      className="w-full max-w-2xl px-8 py-12 md:py-20 text-center animate-fade-in flex flex-col items-center relative select-none rounded-[3rem] transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)]"
     >
-      <div className="absolute right-4 top-4 md:right-8 md:top-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col space-y-3 z-10">
+      <div className="absolute right-4 top-4 md:right-8 md:top-8 flex flex-col space-y-3 z-10 opacity-40 hover:opacity-100 transition-opacity">
         <button 
           onClick={handleSaveClick}
           className={`p-3 rounded-full transition-all duration-300 bg-white/40 backdrop-blur-sm border border-[#f2e9e4] shadow-sm ${isSaved ? 'text-[#e5989b]' : 'text-[#9a8c98] hover:text-[#e5989b]'}`}
@@ -136,8 +134,20 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, isLoading, isSaved, 
         </p>
       )}
 
-      <div className="mt-12 md:mt-16 opacity-0 group-hover:opacity-40 transition-all duration-1000 text-[10px] uppercase tracking-[0.3em] text-[#4a4e69]">
-        Tap to kindle another
+      <div className="mt-16 flex flex-col items-center">
+        <button 
+          onClick={onRefresh}
+          className="group flex flex-col items-center space-y-4 focus:outline-none"
+        >
+          <div className="w-14 h-14 rounded-full bg-white/40 border border-[#f2e9e4] flex items-center justify-center text-[#9a8c98] group-hover:text-[#4a4e69] group-hover:bg-white group-hover:shadow-lg transition-all duration-500 scale-100 group-hover:scale-110 active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24" className="group-hover:rotate-180 transition-transform duration-700">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+          </div>
+          <span className="text-[10px] uppercase tracking-[0.3em] text-[#9a8c98] group-hover:text-[#4a4e69] transition-colors duration-500">
+            Kindle Another
+          </span>
+        </button>
       </div>
 
       {displayMessage.type === 'compliment' && (

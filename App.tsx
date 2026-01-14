@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { GentleMessage, MessageType, DailyGoal, DailyQuote } from './types';
+import { GentleMessage, MessageType, DailyGoal } from './types';
 import { fetchGentleMessage } from './services/geminiService';
 import { audioService } from './services/audioService';
 import MessageCard from './components/MessageCard';
@@ -8,7 +7,6 @@ import DailyGoalSection from './components/DailyGoalSection';
 import AmbientSoundControl, { AmbientType } from './components/AmbientSoundControl';
 
 const App: React.FC = () => {
-  // Use a sensible default message to guarantee content on first paint
   const [message, setMessage] = useState<GentleMessage>({
     text: "Welcome to your quiet corner. Take a breath and let the world drift away for a moment.",
     type: 'quote',
@@ -21,15 +19,6 @@ const App: React.FC = () => {
   const [ambientType, setAmbientType] = useState<AmbientType>('none');
   const [searchTerm, setSearchTerm] = useState('');
   
-  const [dailyQuote, setDailyQuote] = useState<DailyQuote | null>(() => {
-    try {
-      const saved = localStorage.getItem('gentle_quote_of_the_day');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
-
   const [savedMessages, setSavedMessages] = useState<GentleMessage[]>(() => {
     try {
       const saved = localStorage.getItem('gentle_saved_messages');
@@ -54,12 +43,12 @@ const App: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
+      // Occasional compliments: 20% chance
       const type: MessageType = forcedType || (Math.random() < 0.2 ? 'compliment' : 'quote');
       const newMessage = await fetchGentleMessage(type, context);
       setMessage(newMessage);
       setBgIndex((prev) => (prev + 1) % backgrounds.length);
       
-      // Attempt to play audio, but catch errors to prevent app crash if AudioContext fails
       try {
         if (newMessage.type === 'compliment') audioService.playCompliment();
         else if (newMessage.type === 'goal_completion') audioService.playCompletion();
@@ -75,14 +64,10 @@ const App: React.FC = () => {
     }
   }, [backgrounds.length]);
 
+  // Ensure a new quote on every refresh
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    if (dailyQuote && dailyQuote.date === today) {
-      setMessage(dailyQuote.message);
-    } else {
-      getNewMessage('daily');
-    }
-  }, [getNewMessage]); // Reduced dependencies to prevent infinite loops
+    getNewMessage();
+  }, [getNewMessage]);
 
   const handleSetGoal = (text: string, totalSteps: number) => {
     const newGoal: DailyGoal = { 
