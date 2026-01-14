@@ -1,4 +1,3 @@
-
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -6,9 +5,8 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   define: {
-    // This ensures process.env is available in the browser context
-    // and correctly handles the API_KEY requirement.
-    'process.env': process.env
+    // Shimming process.env to avoid ReferenceErrors in browser
+    'process.env': JSON.stringify(process.env || {})
   },
   build: {
     target: 'esnext',

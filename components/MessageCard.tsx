@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { GentleMessage } from '../types';
@@ -24,9 +23,14 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, isLoading, isSaved, 
     );
   }
 
-  if (!message) return null;
+  // Ensure we never return null to prevent blank pages
+  const displayMessage = message || {
+    text: "Kindling a thought for you...",
+    type: 'quote',
+    author: 'Ember'
+  } as GentleMessage;
 
-  const getFullText = () => `"${message.text}"${message.author ? ` — ${message.author}` : ''}`;
+  const getFullText = () => `"${displayMessage.text}"${displayMessage.author ? ` — ${displayMessage.author}` : ''}`;
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -59,23 +63,21 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, isLoading, isSaved, 
         }
       }
     } else {
-      // Fallback to copy if sharing is not supported
       handleCopy(e);
     }
   };
 
   const handleSaveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onSave(message);
+    onSave(displayMessage);
   };
 
   return (
     <div 
-      key={message.text}
+      key={displayMessage.text}
       onClick={onRefresh}
       className="w-full max-w-2xl px-8 py-12 md:py-20 text-center animate-fade-in flex flex-col items-center relative cursor-pointer group select-none rounded-[3rem] transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)] hover:scale-[1.03] hover:bg-white/20 hover:shadow-[0_40px_80px_-20px_rgba(74,78,105,0.08)] active:scale-[0.98]"
     >
-      {/* Action Buttons Layer */}
       <div className="absolute right-4 top-4 md:right-8 md:top-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col space-y-3 z-10">
         <button 
           onClick={handleSaveClick}
@@ -122,24 +124,23 @@ const MessageCard: React.FC<MessageCardProps> = ({ message, isLoading, isSaved, 
         </button>
       </div>
 
-      <div className={`text-2xl md:text-4xl lg:text-5xl leading-[1.6] md:leading-[1.4] serif italic mb-8 md:mb-12 transition-colors duration-1000 ${message.type === 'goal_completion' ? 'text-[#4a4e69]' : 'text-[#22223b]'}`}>
+      <div className={`text-2xl md:text-4xl lg:text-5xl leading-[1.6] md:leading-[1.4] serif italic mb-8 md:mb-12 transition-colors duration-1000 ${displayMessage.type === 'goal_completion' ? 'text-[#4a4e69]' : 'text-[#22223b]'}`}>
         <ReactMarkdown components={{ p: React.Fragment }}>
-          {`"${message.text}"`}
+          {`"${displayMessage.text}"`}
         </ReactMarkdown>
       </div>
       
-      {message.author && (
+      {displayMessage.author && (
         <p className="text-xs md:text-sm uppercase tracking-[0.4em] text-[#9a8c98] font-light opacity-60">
-          — {message.author}
+          — {displayMessage.author}
         </p>
       )}
 
-      {/* Interaction Hint */}
       <div className="mt-12 md:mt-16 opacity-0 group-hover:opacity-40 transition-all duration-1000 text-[10px] uppercase tracking-[0.3em] text-[#4a4e69]">
         Tap to kindle another
       </div>
 
-      {message.type === 'compliment' && (
+      {displayMessage.type === 'compliment' && (
         <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-5 py-2 shimmer-bg text-[#4a4e69] text-[10px] font-medium rounded-full uppercase tracking-[0.3em] shadow-sm border border-[#f2e9e4]">
           Warmth
         </div>

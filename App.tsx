@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { GentleMessage, MessageType, DailyGoal, DailyQuote } from './types';
 import { fetchGentleMessage } from './services/geminiService';
@@ -10,24 +9,37 @@ import AmbientSoundControl, { AmbientType } from './components/AmbientSoundContr
 const App: React.FC = () => {
   const [message, setMessage] = useState<GentleMessage | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [bgIndex, setBgIndex] = useState(0);
   const [showFavorites, setShowFavorites] = useState(false);
   const [ambientType, setAmbientType] = useState<AmbientType>('none');
   const [searchTerm, setSearchTerm] = useState('');
   
   const [dailyQuote, setDailyQuote] = useState<DailyQuote | null>(() => {
-    const saved = localStorage.getItem('gentle_quote_of_the_day');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('gentle_quote_of_the_day');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
   });
 
   const [savedMessages, setSavedMessages] = useState<GentleMessage[]>(() => {
-    const saved = localStorage.getItem('gentle_saved_messages');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('gentle_saved_messages');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
   });
   
   const [dailyGoals, setDailyGoals] = useState<DailyGoal[]>(() => {
-    const saved = localStorage.getItem('gentle_daily_goals');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('gentle_daily_goals');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
   const backgrounds = [
@@ -39,12 +51,12 @@ const App: React.FC = () => {
 
   const getNewMessage = useCallback(async (forcedType?: MessageType, context?: string) => {
     setIsLoading(true);
-    const type: MessageType = forcedType || (Math.random() < 0.2 ? 'compliment' : 'quote');
-    const newMessage = await fetchGentleMessage(type, context);
-    
-    setTimeout(() => {
+    setError(null);
+    try {
+      const type: MessageType = forcedType || (Math.random() < 0.2 ? 'compliment' : 'quote');
+      const newMessage = await fetchGentleMessage(type, context);
+      
       setMessage(newMessage);
-      setIsLoading(false);
       setBgIndex((prev) => (prev + 1) % backgrounds.length);
       
       if (newMessage.type === 'compliment') {
@@ -54,10 +66,14 @@ const App: React.FC = () => {
       } else {
         audioService.playQuote();
       }
-    }, 600);
+    } catch (err) {
+      console.error("Failed to fetch message", err);
+      setError("The connection to the stars was interrupted.");
+    } finally {
+      setIsLoading(false);
+    }
   }, [backgrounds.length]);
 
-  // Handle initialization: Daily Quote first, then random
   useEffect(() => {
     const init = async () => {
       const today = new Date().toISOString().split('T')[0];
@@ -66,16 +82,14 @@ const App: React.FC = () => {
         setMessage(dailyQuote.message);
         setIsLoading(false);
       } else {
-        setIsLoading(true);
-        const newMessage = await fetchGentleMessage('daily');
-        const newDaily: DailyQuote = { date: today, message: newMessage };
-        setDailyQuote(newDaily);
-        localStorage.setItem('gentle_quote_of_the_day', JSON.stringify(newDaily));
-        setMessage(newMessage);
-        setIsLoading(false);
+        await getNewMessage('daily');
       }
     };
-    init();
+    init().catch(err => {
+      console.error("Initialization error", err);
+      setError("Something went wrong while lighting the fire.");
+      setIsLoading(false);
+    });
   }, []);
 
   const handleSetGoal = (text: string, totalSteps: number) => {
@@ -183,11 +197,16 @@ const App: React.FC = () => {
       </nav>
 
       <main className="flex-1 w-full max-w-5xl flex flex-col items-center">
+        {error && !showFavorites && (
+          <div className="bg-red-50 text-red-800 text-xs px-4 py-2 rounded-full mb-8 animate-fade-in-up">
+            {error}
+          </div>
+        )}
+
         {showFavorites ? (
           <div className="w-full max-w-2xl animate-fade-in flex flex-col items-center">
             <h2 className="text-xs uppercase tracking-[0.3em] text-[#9a8c98] mb-8">Your Collection</h2>
             
-            {/* Search Bar */}
             <div className="w-full max-w-md mb-12 relative group">
               <input
                 type="text"
