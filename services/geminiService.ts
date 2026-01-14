@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { GentleMessage, MessageType } from "../types";
 
 export const fetchGentleMessage = async (type: MessageType, goalContext?: string, entropy?: string): Promise<GentleMessage> => {
-  // Move fallbacks inside the function to avoid module-scope static data
+  // Move fallbacks inside the function to avoid module-scope static data being cached
   const localFallbacks: string[] = [
     "The stars are quiet today, but they are still there. Take a gentle breath.",
     "You are doing enough, simply by being here in this moment.",
@@ -28,8 +28,8 @@ export const fetchGentleMessage = async (type: MessageType, goalContext?: string
     const ai = new GoogleGenAI({ apiKey });
     
     let prompt = "";
-    // Incorporate entropy/theme to ensure model variation
-    const variation = entropy ? ` Focus theme: ${entropy}.` : "";
+    // Incorporate entropy/theme to ensure model variation on every request
+    const variation = entropy ? ` Focus theme: ${entropy}.` : ` Random Seed: ${Math.random()}.`;
 
     if (type === 'quote') {
       prompt = `Generate a short, unique, and deeply gentle motivational quote.${variation} It should feel like a warm hug and avoid generic clichés. Focus on themes of peace, resilience, or self-compassion. Maximum 20 words.`;
